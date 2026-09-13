@@ -25,13 +25,13 @@
   <meta name="twitter:image" content="https://vortexflow.io/img/og-image.png?v=4">
   <meta name="color-scheme" content="light dark">
   <script>(function(){var t="light";try{var s=localStorage.getItem("vf-theme");t=s==="light"||s==="dark"?s:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")}catch(e){}document.documentElement.setAttribute("data-theme",t)})();</script>
-  <link rel="stylesheet" href="/css/site.css?v=20">
+  <link rel="stylesheet" href="/css/site.css?v=21">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "HowTo",
     "name": "Install VortexFlow on macOS",
-    "description": "Download the disk image, drag VortexFlow to Applications, and open it once through Gatekeeper.",
+    "description": "Download the disk image and click Open Anyway once, or build VortexFlow from source on your Mac.",
     "totalTime": "PT3M",
     "tool": { "@type": "HowToTool", "name": "macOS 15 or later" },
     "step": [
@@ -62,46 +62,42 @@
     <img class="app-icon" src="/img/app-icon.png" alt="" width="88" height="88" style="margin-left:0">
     <p class="eyebrow">Download</p>
     <h1>Get VortexFlow</h1>
-    <p class="lead">Free and open source under the MIT license. One disk image, no account, no telemetry. It runs on macOS 15 or later, with any mouse and any keyboard.</p>
+    <p class="lead">Free and open source under the MIT license. Two ways in. A disk image, or one command that builds it on your Mac. No account, no telemetry. macOS 15 or later, any mouse, any keyboard.</p>
 
     <div class="dl-row">
       <a class="btn btn-primary btn-lg" href="/downloads/Vortexflow-1.0.1.dmg" data-download rel="noopener">
         <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M8 1.5v8.3M4.6 6.6L8 10l3.4-3.4M2.5 12.5h11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Download for macOS
       </a>
-      <a class="btn btn-ghost btn-lg" href="https://github.com/maheshauti96/VortexFlow" rel="noopener">
-        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
-        View on GitHub<span class="btn-count" data-stars></span>
-      </a>
+      <a class="btn btn-ghost btn-lg" href="#source">Build from source</a>
     </div>
     <ul class="chips" aria-label="Requirements">
       <li><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M11.2 8.4c0-1.5 1.2-2.2 1.3-2.2-.7-1-1.8-1.2-2.2-1.2-.9-.1-1.8.5-2.3.5-.5 0-1.2-.5-2-.5-1 0-2 .6-2.5 1.5-1.1 1.9-.3 4.7.8 6.2.5.8 1.1 1.6 1.9 1.6.8 0 1.1-.5 2-.5.9 0 1.2.5 2 .5.8 0 1.4-.8 1.9-1.5.6-.9.8-1.7.8-1.8 0 0-1.7-.6-1.7-2.6zM9.7 4c.4-.5.7-1.2.6-1.9-.6 0-1.3.4-1.8.9-.4.4-.7 1.1-.6 1.8.7.1 1.4-.3 1.8-.8z"/></svg>macOS 15 or later</li>
       <li>Universal · Apple silicon &amp; Intel</li>
       <li>About 5 MB</li>
-      <li>Signed, not notarized</li>
-      <li>SHA-256 on every release</li>
+      <li>Open Anyway, once</li>
     </ul>
     <p class="dl-meta"><span data-release-tag>v1.0.1</span> · <code>.dmg</code> from this site · SHA-256 <code>3e919c41189c3d7a12ab93f4fef1abd0291e9d54c7798ccf8c87a9e888cdfd87</code><span data-download-version hidden></span></p>
 
-    <h2>Install</h2>
+    <h2>Disk image</h2>
     <ol class="steps">
       <li>Open the disk image and drag <strong>VortexFlow</strong> to your Applications folder.</li>
-      <li>Open it. The first time, macOS will refuse. See <a href="#gatekeeper">Gatekeeper</a> below. You do this once.</li>
-      <li>Grant the permissions it asks for. Each one is optional and <a href="/permissions/">explained</a>; the app runs with any subset.</li>
+      <li>Open it. macOS will refuse. That is expected. Leave the dialog, then click <strong>Open Anyway</strong> as below. You do this once.</li>
+      <li>Grant the permissions it asks for. Each one is optional and <a href="/permissions/">explained</a>. The app runs with any subset.</li>
       <li>Press middle-click, or the shortcut. The spiral appears around the pointer.</li>
     </ol>
 
     <h2 id="gatekeeper">Gatekeeper: "the developer cannot be verified"</h2>
-    <p>VortexFlow is signed, but it is not notarized, because notarizing requires a paid Apple Developer account. macOS therefore refuses to open it the first time. That is expected, and the fix takes a moment:</p>
+    <p>That sheet is expected. Click Open Anyway once. Then the app stays launchable.</p>
     <ol class="steps">
-      <li>Open the app. macOS will refuse. Leave that dialog.</li>
+      <li>Open the app. macOS will refuse. Leave that dialog. Do not choose Move to Bin.</li>
       <li>Open <strong>System Settings → Privacy &amp; Security</strong>, scroll to <strong>Security</strong>, and click <strong>Open Anyway</strong> next to VortexFlow. Authenticate when asked.</li>
-      <li>Open the app again. It launches, and stays launchable.</li>
+      <li>Open the app again.</li>
     </ol>
-    <p>On macOS 15 and later, right-clicking the app and choosing Open no longer works as a shortcut for this; Apple removed that bypass. See <a href="https://support.apple.com/en-us/guide/mac-help/mh40616/mac" rel="noopener">Apple's own documentation</a>. If you would rather not click Open Anyway on something you did not compile, the section below is for you.</p>
+    <p>VortexFlow is open source. Apple has not notarized the download, so macOS asks you to confirm the first launch. On macOS 15, right-click → Open no longer skips this. See <a href="https://support.apple.com/en-us/guide/mac-help/mh40616/mac" rel="noopener">Apple's own documentation</a>. If you would rather not click Open Anyway on a binary you did not compile, build it below.</p>
 
     <h2 id="source">Build from source</h2>
-    <p>The repository is a Swift package. Sparkle is the one third-party dependency, used for updates. You need macOS 15 or later and the Xcode command-line tools (<code>xcode-select --install</code>). The build script compiles the package, assembles the <code>.app</code> bundle, signs it, and with <code>--install</code> replaces the copy in Applications.</p>
+    <p>This path never shows that sheet. The repository is a Swift package. Sparkle is the one third-party dependency, used for updates. You need macOS 15 or later and the Xcode command-line tools (<code>xcode-select --install</code>). The build script compiles the package, assembles the <code>.app</code> bundle, signs it on your machine, and with <code>--install</code> replaces the copy in Applications.</p>
     <pre class="code"><span class="cm"># clone, build, install</span>
 git clone https://github.com/maheshauti96/VortexFlow.git
 cd VortexFlow
@@ -109,12 +105,13 @@ Scripts/build-app.sh --install
 
 <span class="cm"># run the tests</span>
 swift test</pre>
-    <p>A locally built app is signed with an ad-hoc identity by default, which means macOS ties its privacy permissions to that exact binary and asks again after every rebuild. If you plan to rebuild often, run <code>Scripts/create-signing-certificate.sh</code> once to create a stable local certificate; the build script picks it up automatically. To produce a disk image like the one on the releases page, run <code>Scripts/make-dmg.sh</code>.</p>
+    <p>A locally built app is signed with an ad-hoc identity by default, which means macOS ties its privacy permissions to that exact binary and asks again after every rebuild. If you plan to rebuild often, run <code>Scripts/create-signing-certificate.sh</code> once to create a stable local certificate; the build script picks it up automatically. To produce a disk image like the one on this page, run <code>Scripts/make-dmg.sh</code>.</p>
+    <p><a href="https://github.com/maheshauti96/VortexFlow" rel="noopener">View the source on GitHub</a><span class="btn-count" data-stars></span></p>
 
     <h2>Verify what you downloaded</h2>
-    <p>Every release on GitHub lists its assets with their SHA-256 digests. To check a disk image against them:</p>
+    <p>The SHA-256 of the current disk image is on this page. To check a file against it:</p>
     <pre class="code">shasum -a 256 ~/Downloads/Vortexflow-*.dmg</pre>
-    <p>Because the source is public, you can also skip the question entirely and build the same code yourself.</p>
+    <p>Or skip the binary and build the same code yourself.</p>
 
     <h2>Uninstall</h2>
     <p>Quit VortexFlow from the menu bar icon and drag it out of Applications. Its settings live in <code>~/Library/Preferences/io.vortexflow.Vortexflow.plist</code>; delete that too if you want no trace left. Nothing else is written anywhere.</p>

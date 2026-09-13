@@ -116,36 +116,31 @@ you agree.
 
 ## Download
 
-**[Download VortexFlow 1.0.1 (.dmg)](https://vortexflow.io/downloads/Vortexflow-1.0.1.dmg)** —
-5.2 MB, universal (Apple Silicon and Intel), macOS 15 or newer.
+Two ways in. Same code either way.
 
-All releases are on the [releases page](https://github.com/maheshauti96/VortexFlow/releases).
+**[Download the disk image](https://vortexflow.io/downloads/Vortexflow-1.0.1.dmg)**
+(5.2 MB, universal, macOS 15 or newer). macOS will block it once. That is expected.
+Click **Open Anyway**, then it stays open.
 
-### Installing
+Or **[build from source](#building-from-source)**. One command, signed on your
+machine. That path never shows the sheet.
+
+### Disk image
 
 1. Open the disk image and drag **VortexFlow** to your Applications folder.
-2. Open it. macOS will refuse, and say the developer cannot be verified. This is
-   expected — keep going.
-3. Open **System Settings → Privacy & Security**, scroll down to the **Security**
-   section, and click **Open Anyway** next to VortexFlow. Authenticate when asked.
-4. Grant the permissions it asks for. The setup window explains what each one buys you.
+2. Open it. macOS will refuse and say the developer cannot be verified. Leave
+   that dialog. Do not choose Move to Bin.
+3. Open **System Settings → Privacy & Security**, scroll down to **Security**,
+   and click **Open Anyway** next to VortexFlow. Authenticate when asked.
+4. Open the app again. Grant the permissions it asks for. The setup window
+   explains what each one buys you.
 
-You only do this once; macOS then remembers VortexFlow as an exception, as described in
-[Apple's own documentation](https://support.apple.com/en-us/guide/mac-help/mh40616/mac).
+You only do this once. macOS then remembers VortexFlow as an exception, as
+described in [Apple's own documentation](https://support.apple.com/en-us/guide/mac-help/mh40616/mac).
 
-The reason is worth stating plainly rather than hiding: VortexFlow is signed, but it is
-not *notarized*, because notarizing requires a paid Apple Developer account. macOS
-blocks unnotarized downloads, and the wording it uses — "cannot be verified" — reads as
-though the app is broken rather than simply unregistered.
-
-Note that on macOS 15 and later, right-clicking the app and choosing Open no longer
-works as a shortcut for this; Apple removed that bypass, so the Privacy & Security route
-above is the only one. Older instructions elsewhere on the internet still describe the
-right-click trick.
-
-If you would rather not take our word for any of it, building from source takes about a
-minute and produces a copy signed on your own machine — see
-[Building from source](#building-from-source).
+VortexFlow is open source. Apple has not notarized the download, so macOS asks
+you to confirm the first launch. On macOS 15, right-click → Open no longer skips
+this. Older instructions elsewhere on the internet still describe that trick.
 
 ---
 
@@ -246,6 +241,9 @@ Button** and then that button.
 ---
 
 ## Building from source
+
+This path never shows the "cannot be verified" sheet. The build is signed on your
+machine.
 
 ```sh
 git clone https://github.com/maheshauti96/VortexFlow.git VortexFlow
@@ -373,7 +371,7 @@ the app's previously frontmost window appears and is immediately replaced.
 
 ## Not there yet
 
-- Notarized distribution and Homebrew (the Privacy & Security → Open Anyway path above)
+- Homebrew (the Privacy & Security → Open Anyway path above still applies to a disk image)
 - Recency history that survives a restart
 - Excluding specific apps
 - Customising size, opacity and animation speed

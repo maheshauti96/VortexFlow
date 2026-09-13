@@ -76,7 +76,7 @@ Stable handles on the site:
 | `nav a[href="/compare/"]` | Compare |
 | `nav a[href="/blog/"]` | Blog |
 | `nav a[href="/case-studies/"]` | Case studies |
-| `a[data-download]` | Latest GitHub Releases download |
+| `a[data-download]` | Disk image on this site (`/downloads/`) |
 | `#gatekeeper` | Gatekeeper heading on `/download/` |
 | `ol.steps li` | Install / Open Anyway steps |
 | `[data-theme-toggle]` | Light/dark toggle, `aria-label` switches with state |

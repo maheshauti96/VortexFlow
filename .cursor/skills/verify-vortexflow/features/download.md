@@ -1,12 +1,12 @@
 # Download and Gatekeeper
 
-A visitor can get the macOS disk image and read the exact Open Anyway steps. The page states the app is signed but not notarized.
+A visitor can get the macOS disk image or build from source. Open Anyway is the expected one-click step for the disk image, not a footnote.
 
 ## Sub-features
 
-- `download-cta` offers `Download for macOS` pointing at `/downloads/Vortexflow-1.0.1.dmg` on this site.
-- `install-steps` lists drag-to-Applications, first-launch refusal, permissions, then middle-click.
-- `gatekeeper` explains Privacy & Security → Open Anyway.
+- `download-cta` offers `Download for macOS` pointing at `/downloads/Vortexflow-1.0.1.dmg` on this site, next to `Build from source` (`#source`).
+- `install-steps` lists drag-to-Applications, Open Anyway once, permissions, then middle-click.
+- `gatekeeper` tells the visitor that sheet is expected and points at Privacy & Security → Open Anyway.
 
 ## How to get to it (user POV)
 
@@ -29,6 +29,6 @@ Preconditions:
 
 ## Gotchas
 
-- `data-download` is rewritten by `site.js` to the latest asset URL when GitHub answers. A missing network still leaves the `/releases/latest` href, which is enough.
-- Do not follow the download in Chrome. The proof is that the button points at Releases, not that a `.dmg` lands in `~/Downloads`.
+- `data-download` keeps the first-party `/downloads/` href unless GitHub later publishes a newer tag.
+- Do not follow the download in Chrome. The proof is that the button points at a `.dmg` on this site, not that a file lands in `~/Downloads`.
 - Inner pages hide header links below 900px. The recipe uses `/download/` directly, not the header button.

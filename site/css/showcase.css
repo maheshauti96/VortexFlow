@@ -29,7 +29,7 @@ html:has(.showcase-page) { scroll-behavior: auto; scroll-padding-top: 76px; }
 .hero-copy h1 { font-size: clamp(43px,3.65vw,56px); font-weight: 650; letter-spacing: -.05em; line-height: 1.04; }
 .hero-copy h1 span { color: #497767; }
 .hero-lede { font-size: 19px; line-height: 1.7; margin-top: 23px; }
-.hero-actions { margin-top: 31px; display: flex; flex-direction: column; align-items: flex-start; gap: 13px; }
+.hero-actions { margin-top: 31px; display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 13px; }
 .hero-link { color: #365e4b; font-size: 14px; font-weight: 600; padding: 7px 0; }
 .availability { font-size: 11px; line-height: 1.8; margin-top: 21px; color: var(--ink-3); }
 .coming-soon { display: inline-block; padding: 2px 7px; border: 1px solid #c7d1bd; border-radius: 4px; margin-right: 5px; font-size: 10px; color: #4c6244; background: #edf0e4; }

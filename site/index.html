@@ -25,7 +25,7 @@
     <meta name="theme-color" content="#f6f4f1">
     <meta name="color-scheme" content="light dark">
     <script>(function(){var t="light";try{var s=localStorage.getItem("vf-theme");t=s==="light"||s==="dark"?s:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")}catch(e){}document.documentElement.setAttribute("data-theme",t)})();</script>
-    <link rel="stylesheet" href="/css/site.css?v=20">
+    <link rel="stylesheet" href="/css/site.css?v=21">
     <script type="application/ld+json">{
       "@context": "https://schema.org",
       "@graph": [
@@ -73,12 +73,12 @@
         {"@type": "Question", "name": "Which windows and tabs can I find?", "acceptedAnswer": {"@type": "Answer", "text": "Search by title, app, site, or URL path. Supported tab providers include Chrome, Safari, Edge, Brave, Arc, Comet, Chromium, and Apple Terminal. If windows and tabs do not match, installed applications can appear."}},
         {"@type": "Question", "name": "What permissions do I need?", "acceptedAnswer": {"@type": "Answer", "text": "Grant only the permissions for the features you want. Icon View needs no Screen Recording. Strip, Grid, and List can show window previews; Spiral and Circular use icons."}},
         {"@type": "Question", "name": "Is it really free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. VortexFlow is open source under the MIT license. There is no paid tier, no trial, no license key, and no account."}},
-        {"@type": "Question", "name": "Why does macOS say the developer can't be verified?", "acceptedAnswer": {"@type": "Answer", "text": "The app is signed but not notarized, because notarization needs a paid Apple Developer account. Open System Settings, Privacy and Security, and choose Open Anyway. You do it once. Or build from source."}}
+        {"@type": "Question", "name": "Why does macOS say the developer can't be verified?", "acceptedAnswer": {"@type": "Answer", "text": "That sheet is expected for an open-source download Apple has not notarized. Open System Settings, Privacy and Security, and choose Open Anyway. You do it once. Or build from source, and the sheet never appears."}}
       ]
       }
       ]
       }</script>
-    <link rel="stylesheet" href="/css/showcase.css?v=10">
+    <link rel="stylesheet" href="/css/showcase.css?v=11">
     <script src="/js/site.js?v=20" defer>
     </script>
     <script src="/js/vortex-glass.js?v=1" defer></script>
@@ -111,9 +111,9 @@
           <p class="hero-lede">Windows, tabs, and pinned favorites from a mouse button or a shortcut.</p>
           <div class="hero-actions">
             <a class="btn btn-primary btn-lg" href="/downloads/Vortexflow-1.0.1.dmg" data-download rel="noopener"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M7.25 1a.75.75 0 0 1 1.5 0v7.19l2.22-2.22a.75.75 0 1 1 1.06 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 1 1 1.06-1.06l2.22 2.22V1ZM2.5 11.75a.75.75 0 0 0-1.5 0v1.5A1.75 1.75 0 0 0 2.75 15h10.5A1.75 1.75 0 0 0 15 13.25v-1.5a.75.75 0 0 0-1.5 0v1.5a.25.25 0 0 1-.25.25H2.75a.25.25 0 0 1-.25-.25v-1.5Z"/></svg>Download for macOS</a>
-            <a class="hero-link" href="https://github.com/maheshauti96/VortexFlow" rel="noopener">View the source on GitHub <span aria-hidden="true">↗</span></a>
+            <a class="btn btn-ghost btn-lg" href="/download/#source">Build from source</a>
           </div>
-          <p class="availability"><span class="coming-soon">Free · MIT</span> Open source · <span data-release-tag>v1.0.1</span> · <a href="/download/">Install notes</a><span data-download-version hidden></span></p>
+          <p class="availability"><span class="coming-soon">Free · MIT</span> Open source · <span data-release-tag>v1.0.1</span> · Disk image needs <a href="/download/#gatekeeper">Open Anyway</a>, once<span data-download-version hidden></span></p>
           <div class="hero-facts"><span>Mouse or keyboard</span><span>macOS 15+</span><span>Apple silicon &amp; Intel</span><span>No account, no telemetry</span></div>
         </div>
         <div class="hero-demo-column">
@@ -199,10 +199,10 @@
     <section id="open-source" class="pricing-section" aria-labelledby="pricing-h">
       <span id="pricing" class="legacy-anchor"></span><span id="download" class="legacy-anchor"></span>
       <div class="wrap">
-        <header class="pricing-heading"><p class="overline">Native Swift. Public source.</p><h2 id="pricing-h">Free and open source.</h2><p>MIT-licensed, native Swift, Sparkle for updates, source public. Download the build or compile it yourself. It is the same code either way.</p></header>
+        <header class="pricing-heading"><p class="overline">Native Swift. Public source.</p><h2 id="pricing-h">Free and open source.</h2><p>MIT-licensed, native Swift, Sparkle for updates, source public. Download the disk image or build it on your Mac. It is the same code either way.</p></header>
         <div class="offer-grid">
-          <article class="offer download-offer"><span class="offer-label">DOWNLOAD</span><div class="offer-price">Free</div><p>One disk image. No account, no trial clock, no license key.</p><a class="btn btn-primary btn-lg offer-cta" href="/downloads/Vortexflow-1.0.1.dmg" data-download rel="noopener">Download for macOS</a><a href="/download/">Install notes and Gatekeeper ↗</a><span class="offer-meta">macOS 15 or later · Apple silicon &amp; Intel · about 5 MB</span></article>
-          <article class="offer source-offer"><span class="offer-label">SOURCE</span><div class="offer-price">MIT</div><p>Read it, fork it, fix the one thing that annoys you.</p><a class="btn btn-primary btn-lg offer-cta" href="https://github.com/maheshauti96/VortexFlow" rel="noopener">View on GitHub<span class="btn-count" data-stars></span></a><a href="/download/#source">Build from source in one command ↗</a><span class="offer-meta">Swift Package Manager · Xcode command-line tools · nothing else</span></article>
+          <article class="offer download-offer"><span class="offer-label">DISK IMAGE</span><div class="offer-price">Free</div><p>Drag to Applications. macOS will block it once. Click Open Anyway. Then it stays open.</p><a class="btn btn-primary btn-lg offer-cta" href="/downloads/Vortexflow-1.0.1.dmg" data-download rel="noopener">Download for macOS</a><a href="/download/#gatekeeper">The one click, step by step</a><span class="offer-meta">macOS 15 or later · Apple silicon &amp; Intel · about 5 MB</span></article>
+          <article class="offer source-offer"><span class="offer-label">SOURCE</span><div class="offer-price">MIT</div><p>Compile it yourself. macOS never shows that sheet. One command, signed on your machine.</p><a class="btn btn-primary btn-lg offer-cta" href="/download/#source">Build from source</a><a href="https://github.com/maheshauti96/VortexFlow" rel="noopener">View on GitHub<span class="btn-count" data-stars></span></a><span class="offer-meta">Xcode command-line tools · Scripts/build-app.sh --install</span></article>
         </div>
         <ul class="oss-stats" aria-label="Project facts">
           <li><strong>1</strong><span>third-party library: Sparkle, for updates</span></li>
@@ -210,7 +210,7 @@
           <li><strong>0<small> bytes</small></strong><span>of telemetry</span></li>
           <li><strong>2</strong><span>kinds of background request: a site's icon, never for a private window, and the first-party appcast</span></li>
         </ul>
-        <p class="offer-note">Signed, not notarized: macOS will say the developer cannot be verified the first time. Open Anyway, once. <a href="/download/#gatekeeper">Here is why</a>.</p>
+        <p class="offer-note">The disk image is expected to be blocked once. Open Anyway, then it stays open. Build from source if you would rather skip that sheet.</p>
       </div>
     </section>
 
@@ -254,8 +254,8 @@
           <details><summary>What permissions do I need?</summary><p>Grant only the permissions for the features you want. Icon View needs no Screen Recording. Strip, Grid, and List can show window previews; Spiral and Circular use icons. <a href="/permissions/">Permission guide.</a></p></details>
           <details><summary>What about private windows and screen sharing?</summary><p>Private windows use the browser's icon; their site icon is not fetched. You can opt the overlay out of screenshots, but behavior depends on macOS and the recording app. Check your setup before sharing.</p></details>
           <details><summary>Is it really free?</summary><p>Yes. VortexFlow is open source under the <a href="/license/">MIT license</a>. There is no paid tier, no trial, no license key, and no account. Download the build or compile it yourself. Either way it is the same code.</p></details>
-          <details><summary>Why does macOS say the developer can't be verified?</summary><p>The app is signed but not notarized, because notarization needs a paid Apple Developer account. Open System Settings → Privacy &amp; Security and choose Open Anyway. You do it once. Or build from source and the question never comes up. <a href="/download/#gatekeeper">Step by step.</a></p></details>
-          <details><summary>Where should I download it from?</summary><p>Only from this site or from <a href="https://github.com/maheshauti96/VortexFlow/releases" rel="noopener">GitHub Releases</a>. VortexFlow asks for Accessibility, Input Monitoring, and Screen Recording, exactly the permissions a tampered copy would need. Every release lists SHA-256 digests for its assets.</p></details>
+          <details><summary>Why does macOS say the developer can't be verified?</summary><p>That sheet is expected. VortexFlow is open source. Apple has not notarized the download, so macOS asks you to confirm once. System Settings → Privacy &amp; Security → Open Anyway. Or <a href="/download/#source">build from source</a> and the sheet never appears. <a href="/download/#gatekeeper">The one click.</a></p></details>
+          <details><summary>Where should I download it from?</summary><p>The disk image on <a href="/download/">this site</a>, or build it from the <a href="https://github.com/maheshauti96/VortexFlow" rel="noopener">public source</a>. VortexFlow asks for Accessibility, Input Monitoring, and Screen Recording, exactly the permissions a tampered copy would need. The download page lists the SHA-256 of the image.</p></details>
           <details><summary>How can I help?</summary><p>Use it on a real desk and report what breaks, especially mice and browsers we have not seen. Pull requests are welcome; the codebase is plain Swift with a large test suite. <a href="#contribute">Where to start.</a></p></details>
         </div>
       </div>
@@ -287,7 +287,6 @@ swift test</pre>
           <ul class="wants">
             <li>Tab search for Firefox, Vivaldi, Opera, and Zen. Chrome, Safari, Edge, Brave, Arc, Comet, and Chromium are covered.</li>
             <li>A Homebrew cask, so <code>brew install --cask vortexflow</code> works.</li>
-            <li>Notarization, so the first launch stops needing Open Anyway.</li>
             <li>Mice we have never seen: if Detect Button misses one of yours, that is a bug report we want.</li>
           </ul>
         </div>

@@ -90,7 +90,7 @@
     <pre class="code">git clone https://github.com/maheshauti96/VortexFlow.git
 cd VortexFlow
 Scripts/build-app.sh --install</pre>
-    <p>The build is signed but not notarized, so macOS asks once on first launch; your own build asks nothing. If you download instead, every release lists SHA-256 digests for its assets next to the files.</p>
+    <p>A disk image from the site is blocked once, until you click Open Anyway. A build you compile yourself never shows that sheet. If you download instead, the download page lists the SHA-256 of the image.</p>
     <h2>6. Watch it run</h2>
     <p>Grant the permissions, open a few sites, and watch with Little Snitch or <code>nettop</code>. You should see an icon request the first time a new site appears in a card, and a request to <code>vortexflow.io/appcast.xml</code> when Sparkle checks for a newer signed build. If you ever see anything else, that is the most important issue you could file.</p>
     <p>An afternoon. Probably less. Then you can decide whether to grant the permissions.</p>
