@@ -138,7 +138,14 @@ enum BrowserTabAlertService {
         var listed: [BrowserTab] = []
         for (windowID, strip) in tabStrips(under: application) {
             guard let windowID else { continue }
-            listed.append(contentsOf: tabs(inStrip: strip, windowID: windowID, browser: browser))
+            listed.append(
+                contentsOf: tabs(
+                    inStrip: strip,
+                    windowID: windowID,
+                    browser: browser,
+                    processIdentifier: pid
+                )
+            )
         }
         return listed
     }
@@ -149,17 +156,24 @@ enum BrowserTabAlertService {
     static func tabs(
         inWindow element: AXUIElement,
         windowID: CGWindowID,
-        browser: BrowserTab.Browser
+        browser: BrowserTab.Browser,
+        processIdentifier: pid_t = 0
     ) -> [BrowserTab] {
         AXBridge.applyMessagingTimeout(element)
         guard let strip = tabStrip(in: element) else { return [] }
-        return tabs(inStrip: strip, windowID: windowID, browser: browser)
+        return tabs(
+            inStrip: strip,
+            windowID: windowID,
+            browser: browser,
+            processIdentifier: processIdentifier
+        )
     }
 
     private static func tabs(
         inStrip strip: AXUIElement,
         windowID: CGWindowID,
-        browser: BrowserTab.Browser
+        browser: BrowserTab.Browser,
+        processIdentifier: pid_t
     ) -> [BrowserTab] {
         tabButtons(of: strip).enumerated().compactMap { offset, button in
             let title = resolvedTabTitle(
@@ -170,6 +184,10 @@ enum BrowserTabAlertService {
             guard !trimmed.isEmpty else { return nil }
             return BrowserTab(
                 browser: browser,
+                // The owning process, so a later scripting record is matched against the
+                // instance this strip belongs to rather than whichever one shares its
+                // bundle identifier.
+                processIdentifier: processIdentifier,
                 windowIdentifier: Int(windowID),
                 tabIndex: offset + 1,
                 title: trimmed,

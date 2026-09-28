@@ -11,7 +11,18 @@ struct BrowserTab: Equatable, Hashable, Sendable {
 
     /// Which browser owns it, so the right scripting dictionary is used.
     let browser: Browser
-    /// The browser's own window id, not a `CGWindowID`. Only meaningful to that browser.
+    /// The process that owns the tab. `0` when unknown.
+    ///
+    /// A bundle identifier does not name a process. Two copies of Chrome run side by side
+    /// whenever a tool launches its own instance with a separate profile (Puppeteer,
+    /// chrome-devtools-mcp, Selenium), both `com.google.Chrome`, each with its own window ids
+    /// numbered from its own counter. Listing "Google Chrome" by name reaches whichever one
+    /// Launch Services happens to resolve — the user's tabs were missing from search because
+    /// the automation copy was the one answering. The pid is what tells them apart, for the
+    /// listing and for the switch back.
+    let processIdentifier: pid_t
+    /// The browser's own window id, not a `CGWindowID`. Only meaningful to that browser, and
+    /// only within `processIdentifier`.
     let windowIdentifier: Int
     /// 1-based, matching AppleScript's indexing.
     let tabIndex: Int
@@ -27,10 +38,11 @@ struct BrowserTab: Equatable, Hashable, Sendable {
     /// are one visual tab bar.
     let groupKey: String?
 
-    /// `windowIdentifier` is a `CGWindowID`, not the browser's AppleScript window id.
+    /// `windowIdentifier` is a `CGWindowID`, not the browser's own window id.
     ///
-    /// Set when the tab was read from the accessibility tab strip because Chrome's
-    /// scripting dictionary currently reports zero windows on this system.
+    /// Set when the tab was read from the accessibility tab strip, which "Search through
+    /// Tabs" uses because it is keyed by the `CGWindowID` already on the card and works
+    /// for a window on another Space.
     let usesNativeWindowIdentifier: Bool
 
     /// The browser's own window id, when this tab was listed from Accessibility and
@@ -53,6 +65,7 @@ struct BrowserTab: Equatable, Hashable, Sendable {
 
     init(
         browser: Browser,
+        processIdentifier: pid_t = 0,
         windowIdentifier: Int,
         tabIndex: Int,
         title: String,
@@ -64,6 +77,7 @@ struct BrowserTab: Equatable, Hashable, Sendable {
         scriptedTabIndex: Int? = nil
     ) {
         self.browser = browser
+        self.processIdentifier = processIdentifier
         self.windowIdentifier = windowIdentifier
         self.tabIndex = tabIndex
         self.title = title
@@ -77,14 +91,21 @@ struct BrowserTab: Equatable, Hashable, Sendable {
 
     /// Accessibility lists tabs by title and has no address. Scripting has the URL,
     /// the window id that can raise another desktop, and whether a favicon is safe.
+    ///
+    /// - Parameter processIdentifier: the process the scripting record came from, when the
+    ///   listing did not already know it. Activation has to be sent to that process.
     func withAddress(
         url: String,
         allowsFaviconRequest: Bool,
+        processIdentifier: pid_t? = nil,
         scriptedWindowIdentifier: Int? = nil,
         scriptedTabIndex: Int? = nil
     ) -> BrowserTab {
         BrowserTab(
             browser: browser,
+            processIdentifier: self.processIdentifier != 0
+                ? self.processIdentifier
+                : (processIdentifier ?? 0),
             windowIdentifier: windowIdentifier,
             tabIndex: tabIndex,
             title: title,
@@ -103,6 +124,7 @@ struct BrowserTab: Equatable, Hashable, Sendable {
         guard let scriptedWindowIdentifier, let scriptedTabIndex else { return nil }
         return BrowserTab(
             browser: browser,
+            processIdentifier: processIdentifier,
             windowIdentifier: scriptedWindowIdentifier,
             tabIndex: scriptedTabIndex,
             title: title,
@@ -114,8 +136,20 @@ struct BrowserTab: Equatable, Hashable, Sendable {
     }
 
     /// Stable within a presentation, which is all the UI needs to key a card by.
+    ///
+    /// The process is part of it. Two instances of one browser number their windows
+    /// independently, so bundle id plus window id alone can name two different tabs.
     var identity: String {
-        "\(browser.bundleIdentifier):\(windowIdentifier):\(tabIndex)"
+        "\(browser.bundleIdentifier):\(processIdentifier):\(windowIdentifier):\(tabIndex)"
+    }
+
+    /// Whether this tab can belong to the process that owns `entry`.
+    ///
+    /// True when either side does not know its process — Accessibility-listed tabs and test
+    /// fixtures carry `0` — so the check only ever separates two instances of one browser that
+    /// have both been identified, which is the one case where sharing a bundle id misleads.
+    func belongsToProcess(of entry: WindowEntry) -> Bool {
+        processIdentifier == 0 || entry.processID == 0 || processIdentifier == entry.processID
     }
 
     /// The bit of the URL worth reading on a card: "grok.com" rather than the full
@@ -169,7 +203,11 @@ struct BrowserTab: Equatable, Hashable, Sendable {
             }
         }
 
-        /// The name AppleScript addresses the application by.
+        /// The application's name, used as a tab's fallback application label.
+        ///
+        /// Not used to address the application. Addressing by name goes through Launch
+        /// Services, which picks one process per bundle id; tabs are listed and switched by
+        /// pid instead so every running instance is reached.
         var scriptingName: String {
             switch self {
             case .chrome: return "Google Chrome"
@@ -183,12 +221,13 @@ struct BrowserTab: Equatable, Hashable, Sendable {
             }
         }
 
-        /// Safari names a tab's title `name`; Chromium calls it `title`; Terminal has no
-        /// `name` on a tab and uses `custom title`, falling back to `tty`.
+        /// The Scripting Bridge selector for a tab's title. Safari names it `name`; Chromium
+        /// calls it `title`; Terminal has no `name` on a tab and uses `custom title`
+        /// (`customTitle` in Cocoa form), falling back to `tty`.
         var titleProperty: String {
             switch self {
             case .safari: return "name"
-            case .terminal: return "custom title"
+            case .terminal: return "customTitle"
             default: return "title"
             }
         }

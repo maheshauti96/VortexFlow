@@ -10,7 +10,11 @@ import Foundation
 struct ScriptedBrowserWindow: Equatable, Sendable {
 
     let browser: BrowserTab.Browser
-    /// The browser's own window id, not a `CGWindowID`.
+    /// The process that answered. `0` when unknown. Two instances of one browser each have
+    /// their own windows, so pairing a native window with a scripted one has to stay within
+    /// the process that owns both.
+    let processIdentifier: pid_t
+    /// The browser's own window id, not a `CGWindowID`. Unique only within `processIdentifier`.
     let identifier: Int
     let isIncognito: Bool
     /// Network loading fails closed. Only the browser's exact, documented `normal` mode sets
@@ -28,6 +32,7 @@ struct ScriptedBrowserWindow: Equatable, Sendable {
 
     init(
         browser: BrowserTab.Browser,
+        processIdentifier: pid_t = 0,
         identifier: Int,
         isIncognito: Bool,
         title: String,
@@ -36,6 +41,7 @@ struct ScriptedBrowserWindow: Equatable, Sendable {
         allowsFaviconRequest: Bool? = nil
     ) {
         self.browser = browser
+        self.processIdentifier = processIdentifier
         self.identifier = identifier
         self.isIncognito = isIncognito
         // Existing fixtures describe only the two established Chromium modes. Production parsing
@@ -167,6 +173,10 @@ enum IncognitoMatcher {
 
         func matches(entry: WindowEntry, scripted: ScriptedBrowserWindow) -> Bool {
             guard entry.bundleIdentifier == scripted.browser.bundleIdentifier else { return false }
+            // Same process, when the record says which one. A second instance of the browser
+            // has windows of its own that can share a title or a rectangle with the first's.
+            guard scripted.processIdentifier == 0 || entry.processID == scripted.processIdentifier
+            else { return false }
             switch self {
             case .titleAndFrame:
                 return sameTitle(entry, scripted) && sameFrame(entry, scripted)
@@ -257,7 +267,9 @@ enum TabWindowMatcher {
         in tabs: [BrowserTab]
     ) -> Int? {
         guard let bundle = entry.bundleIdentifier else { return nil }
-        let relevant = tabs.filter { $0.browser.bundleIdentifier == bundle }
+        let relevant = tabs.filter {
+            $0.browser.bundleIdentifier == bundle && $0.belongsToProcess(of: entry)
+        }
         guard !relevant.isEmpty else { return nil }
 
         let grouped = Dictionary(grouping: relevant, by: \.windowIdentifier)
@@ -298,12 +310,12 @@ enum TabWindowMatcher {
 /// Copy scripting URLs onto Accessibility-listed tabs, without changing their
 /// native window ids.
 ///
-/// Search through Tabs reads Chrome's tab strip because the scripting `windows`
-/// collection is sometimes empty — and even when it is not, a window on another
-/// Space is often missing from Accessibility's current list. The strip has titles
-/// and no addresses, so every wedge would otherwise keep the browser icon and
-/// the browser name. Scripting still knows every tab's URL across Spaces; matching
-/// those onto the listed tabs is what lets favicons and hosts appear.
+/// Search through Tabs reads Chrome's tab strip because it is keyed by the `CGWindowID`
+/// already on the card, and it keeps working for a window on another Space that is
+/// missing from Accessibility's current window list. The strip has titles and no
+/// addresses, so every wedge would otherwise keep the browser icon and the browser name.
+/// Scripting still knows every tab's URL across Spaces; matching those onto the listed
+/// tabs is what lets favicons and hosts appear.
 enum TabAddressMatcher {
 
     static func enrich(
@@ -313,7 +325,11 @@ enum TabAddressMatcher {
     ) -> [BrowserTab] {
         guard !listed.isEmpty, !scripted.isEmpty else { return listed }
         let browser = listed[0].browser
-        let relevant = scripted.filter { $0.browser == browser && !$0.url.isEmpty }
+        let relevant = scripted.filter { tab in
+            tab.browser == browser
+                && !tab.url.isEmpty
+                && (window.map(tab.belongsToProcess(of:)) ?? true)
+        }
         guard !relevant.isEmpty else { return listed }
 
         let pool: [BrowserTab]
@@ -364,6 +380,7 @@ enum TabAddressMatcher {
             return tab.withAddress(
                 url: hit.url,
                 allowsFaviconRequest: hit.allowsFaviconRequest,
+                processIdentifier: hit.processIdentifier,
                 scriptedWindowIdentifier: hit.windowIdentifier,
                 scriptedTabIndex: hit.tabIndex
             )

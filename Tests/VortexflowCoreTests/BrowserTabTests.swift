@@ -288,12 +288,15 @@ struct BrowserTabTests {
 
     /// Terminal's dictionary is a third vocabulary: no tab `name`, no URL, and selection is
     /// a boolean on the tab rather than an index on the window.
+    ///
+    /// The title term is the Cocoa selector, not the AppleScript spelling: Scripting Bridge
+    /// sends `customTitle`, and `custom title` names nothing.
     @Test("Terminal uses its own scripting terms")
     func terminalUsesItsOwnTerms() {
         let terminal = BrowserTab.Browser.terminal
         #expect(terminal.bundleIdentifier == "com.apple.Terminal")
         #expect(terminal.scriptingName == "Terminal")
-        #expect(terminal.titleProperty == "custom title")
+        #expect(terminal.titleProperty == "customTitle")
         #expect(terminal.usesSelectedTab)
         #expect(!terminal.usesCurrentTab)
         #expect(!terminal.hasTabURLs)
@@ -303,44 +306,47 @@ struct BrowserTabTests {
 
 
 
-    // MARK: - Parsing tabs
+    // MARK: - Building tabs from what a window answered
 
-    private static let field = "\u{01}"
-    private static let item = "\u{02}"
-    private static let record = "\u{03}"
+    private static let chromeProcess = BrowserTabService.BrowserProcess(
+        browser: .chrome,
+        processIdentifier: 855
+    )
 
-    private func tabRecord(
+    private func listing(
         window: Int,
-        mode: String,
+        mode: String = "normal",
         titles: [String],
-        urls: [String]
-    ) -> String {
-        [
-            String(window),
-            mode,
-            titles.joined(separator: Self.item),
-            urls.joined(separator: Self.item),
-        ].joined(separator: Self.field)
+        urls: [String],
+        frame: CGRect? = nil
+    ) -> BrowserTabService.Session.WindowListing {
+        BrowserTabService.Session.WindowListing(
+            identifier: window,
+            mode: mode,
+            frame: frame,
+            titles: titles,
+            urls: urls
+        )
     }
 
-    @Test("A tab record parses into tabs with their window's mode")
-    func tabRecordParses() {
-        let output = [
-            tabRecord(
-                window: 7,
-                mode: "normal",
-                titles: ["Home / X", "Inbox"],
-                urls: ["https://x.com/home", "https://mail.example.com"]
-            ),
-            tabRecord(
-                window: 8,
-                mode: "incognito",
-                titles: ["Private"],
-                urls: ["https://example.com"]
-            ),
-        ].joined(separator: Self.record)
-
-        let tabs = BrowserTabService.parseTabs(output, browser: .chrome)
+    @Test("A window's tab lists become tabs carrying their window's mode")
+    func windowListingsBecomeTabs() {
+        let tabs = BrowserTabService.tabs(
+            in: [
+                listing(
+                    window: 7,
+                    titles: ["Home / X", "Inbox"],
+                    urls: ["https://x.com/home", "https://mail.example.com"]
+                ),
+                listing(
+                    window: 8,
+                    mode: "incognito",
+                    titles: ["Private"],
+                    urls: ["https://example.com"]
+                ),
+            ],
+            of: Self.chromeProcess
+        )
         #expect(tabs.count == 3)
 
         #expect(tabs[0].windowIdentifier == 7)
@@ -354,75 +360,92 @@ struct BrowserTabTests {
         #expect(!tabs[2].allowsFaviconRequest, "an incognito window's tabs must never be fetched")
     }
 
-    /// Fails closed. An unrecognised mode is treated as private, because the cost of guessing
-    /// wrong is a private address going out over the network.
-    @Test("An unknown window mode blocks the icon request", arguments: ["", "guest", "unknown", "Normal-ish"])
-    func unknownModeBlocksTheRequest(mode: String) {
-        let output = tabRecord(
-            window: 1,
-            mode: mode,
-            titles: ["Something"],
-            urls: ["https://example.com"]
+    /// Every tab knows which process it came from, which is what lets two instances of one
+    /// browser both be listed and each be switched back to.
+    @Test("Tabs carry the process they were listed from")
+    func tabsCarryTheirProcess() {
+        let mine = BrowserTabService.tabs(
+            in: [listing(window: 1_263_791_277, titles: ["Deel"], urls: ["https://app.deel.com/"])],
+            of: Self.chromeProcess
+        )
+        let automation = BrowserTabService.tabs(
+            in: [listing(window: 943_944_415, titles: ["Harness"], urls: ["http://127.0.0.1:4173/"])],
+            of: BrowserTabService.BrowserProcess(browser: .chrome, processIdentifier: 37_835)
         )
 
-        let tabs = BrowserTabService.parseTabs(output, browser: .chrome)
+        #expect(mine[0].processIdentifier == 855)
+        #expect(automation[0].processIdentifier == 37_835)
+        // Identity has to separate them even when the window ids collide, which they can:
+        // each instance numbers its windows from its own counter.
+        #expect(mine[0].identity != automation[0].identity)
+    }
+
+    /// Fails closed. An unrecognised mode is treated as private, because the cost of guessing
+    /// wrong is a private address going out over the network.
+    @Test(
+        "An unknown window mode blocks the icon request",
+        arguments: ["", "guest", "unknown", "Normal-ish"]
+    )
+    func unknownModeBlocksTheRequest(mode: String) {
+        let tabs = BrowserTabService.tabs(
+            in: [listing(window: 1, mode: mode, titles: ["Something"], urls: ["https://example.com"])],
+            of: Self.chromeProcess
+        )
         #expect(tabs.count == 1)
         #expect(!tabs[0].allowsFaviconRequest, "mode \"\(mode)\" should not be eligible")
     }
 
-    /// Safari cannot report a mode at all, so the script substitutes a literal and every Safari
-    /// tab is ineligible — the same fail-closed treatment its windows already get.
+    /// Safari cannot report a mode at all, so it is never asked and every Safari tab is
+    /// ineligible — the same fail-closed treatment its windows already get.
     @Test("Safari tabs are never eligible")
     func safariTabsAreNeverEligible() {
-        let output = tabRecord(
-            window: 3,
-            mode: "unknown",
-            titles: ["Page"],
-            urls: ["https://example.com"]
+        let tabs = BrowserTabService.tabs(
+            in: [listing(window: 3, mode: "unknown", titles: ["Page"], urls: ["https://example.com"])],
+            of: BrowserTabService.BrowserProcess(browser: .safari, processIdentifier: 501)
         )
-
-        let tabs = BrowserTabService.parseTabs(output, browser: .safari)
         #expect(tabs.count == 1)
         #expect(!tabs[0].allowsFaviconRequest)
-    }
-
-    @Test("A malformed tab record is skipped rather than crashing")
-    func malformedTabRecordsAreSkipped() {
-        let output = [
-            "not-a-number\u{01}normal\u{01}Title\u{01}https://example.com",
-            ["5", "normal"].joined(separator: Self.field),
-            tabRecord(window: 9, mode: "normal", titles: ["Good"], urls: ["https://good.example"]),
-        ].joined(separator: Self.record)
-
-        let tabs = BrowserTabService.parseTabs(output, browser: .chrome)
-        #expect(tabs.count == 1)
-        #expect(tabs[0].windowIdentifier == 9)
     }
 
     /// A tab with neither a title nor an address is still loading and cannot be matched.
     @Test("Empty tabs are dropped")
     func emptyTabsAreDropped() {
-        let output = tabRecord(
-            window: 2,
-            mode: "normal",
-            titles: ["", "Real"],
-            urls: ["", "https://real.example"]
+        let tabs = BrowserTabService.tabs(
+            in: [listing(window: 2, titles: ["", "Real"], urls: ["", "https://real.example"])],
+            of: Self.chromeProcess
         )
-
-        let tabs = BrowserTabService.parseTabs(output, browser: .chrome)
         #expect(tabs.count == 1)
         #expect(tabs[0].title == "Real")
     }
 
+    /// A window whose address list came back shorter than its titles still yields tabs. The two
+    /// lists are separate events, so one can answer and the other fail.
+    @Test("Titles without matching addresses still become tabs")
+    func titlesWithoutAddressesStillBecomeTabs() {
+        let tabs = BrowserTabService.tabs(
+            in: [listing(window: 4, titles: ["First", "Second"], urls: [])],
+            of: Self.chromeProcess
+        )
+        #expect(tabs.map(\.title) == ["First", "Second"])
+        #expect(tabs.allSatisfy { $0.url.isEmpty })
+    }
+
     /// Terminal has no URL and no browsing mode. A custom title is enough to keep the tab,
     /// and nothing about it is eligible for a favicon fetch.
-    @Test("Terminal tabs parse from titles and bounds")
-    func terminalTabsParseFromTitlesAndBounds() {
-        let output = [
-            "7659", "0", "70", "877", "605", "project — zsh",
-        ].joined(separator: Self.field)
-
-        let tabs = BrowserTabService.parseTerminalTabs(output)
+    @Test("Terminal tabs come from their custom titles")
+    func terminalTabsComeFromCustomTitles() {
+        let tabs = BrowserTabService.tabs(
+            in: [
+                listing(
+                    window: 7659,
+                    mode: "unknown",
+                    titles: ["project — zsh"],
+                    urls: ["/dev/ttys004"],
+                    frame: CGRect(x: 0, y: 70, width: 877, height: 535)
+                ),
+            ],
+            of: BrowserTabService.BrowserProcess(browser: .terminal, processIdentifier: 604)
+        )
         #expect(tabs.count == 1)
         #expect(tabs[0].windowIdentifier == 7659)
         #expect(tabs[0].tabIndex == 1)
@@ -432,16 +455,28 @@ struct BrowserTabTests {
         #expect(tabs[0].groupKey == nil, "a lone window is not a tab group")
     }
 
+    /// An unnamed session falls back to its tty, so it is still findable.
+    @Test("An untitled Terminal session falls back to its tty")
+    func untitledTerminalSessionFallsBackToTty() {
+        let tabs = BrowserTabService.tabs(
+            in: [listing(window: 1, mode: "unknown", titles: [""], urls: ["/dev/ttys020"])],
+            of: BrowserTabService.BrowserProcess(browser: .terminal, processIdentifier: 604)
+        )
+        #expect(tabs.map(\.title) == ["/dev/ttys020"])
+    }
+
     /// The pills in Terminal's title bar are other windows sharing a frame, not `tabs of window`.
     /// Grouping on bounds is what lets Search through Tabs list both.
     @Test("Terminal windows that share a frame are one tab group")
     func terminalWindowsThatShareAFrameAreOneTabGroup() {
-        let output = [
-            ["7659", "0", "70", "877", "605", "grok"].joined(separator: Self.field),
-            ["7656", "0", "70", "877", "605", "zsh"].joined(separator: Self.field),
-        ].joined(separator: Self.record)
-
-        let tabs = BrowserTabService.parseTerminalTabs(output)
+        let shared = CGRect(x: 0, y: 70, width: 877, height: 535)
+        let tabs = BrowserTabService.tabs(
+            in: [
+                listing(window: 7659, mode: "unknown", titles: ["grok"], urls: [], frame: shared),
+                listing(window: 7656, mode: "unknown", titles: ["zsh"], urls: [], frame: shared),
+            ],
+            of: BrowserTabService.BrowserProcess(browser: .terminal, processIdentifier: 604)
+        )
         #expect(tabs.map(\.title) == ["grok", "zsh"])
         #expect(tabs.map(\.windowIdentifier) == [7659, 7656])
         #expect(Set(tabs.compactMap(\.groupKey)).count == 1)
@@ -450,12 +485,25 @@ struct BrowserTabTests {
 
     @Test("Terminal windows on different frames stay separate")
     func terminalWindowsOnDifferentFramesStaySeparate() {
-        let output = [
-            ["1", "0", "70", "877", "605", "left"].joined(separator: Self.field),
-            ["2", "900", "70", "1777", "605", "right"].joined(separator: Self.field),
-        ].joined(separator: Self.record)
-
-        let tabs = BrowserTabService.parseTerminalTabs(output)
+        let tabs = BrowserTabService.tabs(
+            in: [
+                listing(
+                    window: 1,
+                    mode: "unknown",
+                    titles: ["left"],
+                    urls: [],
+                    frame: CGRect(x: 0, y: 70, width: 877, height: 535)
+                ),
+                listing(
+                    window: 2,
+                    mode: "unknown",
+                    titles: ["right"],
+                    urls: [],
+                    frame: CGRect(x: 900, y: 70, width: 877, height: 535)
+                ),
+            ],
+            of: BrowserTabService.BrowserProcess(browser: .terminal, processIdentifier: 604)
+        )
         #expect(tabs.allSatisfy { $0.groupKey == nil })
     }
 }

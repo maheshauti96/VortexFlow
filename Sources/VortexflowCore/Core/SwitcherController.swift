@@ -2804,7 +2804,8 @@ extension SwitcherController: TriggerMonitorDelegate {
                 axTabs = BrowserTabAlertService.tabs(
                     inWindow: element,
                     windowID: entry.windowID,
-                    browser: browser
+                    browser: browser,
+                    processIdentifier: entry.processID
                 )
             }
             if axTabs.isEmpty {
@@ -2946,18 +2947,17 @@ extension SwitcherController: TriggerMonitorDelegate {
 
         Task { [weak self, browserTabs] in
             let tabs = await browserTabs.tabs()
+            // Keyed by process, not bundle identifier. Two instances of one browser are two
+            // processes sharing an identifier, and a tab has to take its icon and its pid from
+            // the one it actually belongs to — that is what makes activation reach it.
             let applications = await MainActor.run {
                 Dictionary(
-                    NSWorkspace.shared.runningApplications
-                        .compactMap { app in app.bundleIdentifier.map { ($0, app) } },
+                    NSWorkspace.shared.runningApplications.map { ($0.processIdentifier, $0) },
                     uniquingKeysWith: { first, _ in first }
                 )
             }
             let entries = tabs.map { tab in
-                WindowEntry.tabEntry(
-                    tab,
-                    application: applications[tab.browser.bundleIdentifier]
-                )
+                WindowEntry.tabEntry(tab, application: applications[tab.processIdentifier])
             }
 
             await MainActor.run {

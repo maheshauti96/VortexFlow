@@ -9,5 +9,16 @@
 	     direct download / Homebrew rather than the Mac App Store. -->
 	<key>com.apple.security.app-sandbox</key>
 	<false/>
+	<!-- Browser tab search asks each browser for its tabs over Apple Events, and
+	     switching to a tab sends one back. Under the hardened runtime — which
+	     `Scripts/build-app.sh` enables for Developer ID builds, because notarization
+	     requires it — Apple Events are refused outright without this entitlement, and
+	     the refusal is not a prompt the user can accept. Tab search would then find
+	     nothing in every browser, on every release build, with no error to show:
+	     exactly the silent-nothing that `BrowserTabService` is written to avoid.
+	     Local "Vortexflow Dev" and ad-hoc builds are not hardened, so they work
+	     without it, which is why this can go unnoticed in development. -->
+	<key>com.apple.security.automation.apple-events</key>
+	<true/>
 </dict>
 </plist>

@@ -17,9 +17,16 @@ struct IncognitoMatcherTests {
         id: CGWindowID,
         title: String,
         frame: CGRect = CGRect(x: 0, y: 0, width: 1200, height: 800),
-        bundle: String? = IncognitoMatcherTests.chrome
+        bundle: String? = IncognitoMatcherTests.chrome,
+        pid: pid_t = 1
     ) -> WindowEntry {
-        var entry = Fixture.entry(id: id, app: "Google Chrome", title: title, frame: frame)
+        var entry = Fixture.entry(
+            id: id,
+            app: "Google Chrome",
+            title: title,
+            pid: pid,
+            frame: frame
+        )
         entry.bundleIdentifier = bundle
         return entry
     }
@@ -199,65 +206,129 @@ struct IncognitoMatcherTests {
         #expect(badged.isEmpty)
     }
 
-    // MARK: - Parsing what the browser said
+    // MARK: - Building a record from what the browser said
 
-    @Test("The window record parses into modes and rectangles")
-    func parsesScriptOutput() {
-        let field = "\u{01}"
-        let record = "\u{03}"
-        let output = [
-            [
-                "1263772735", "normal", "Inbox", "0", "0", "1920", "1044",
-                "https://mail.example/",
-            ].joined(separator: field),
-            // Legacy seven-field records still parse and simply have no active URL.
-            ["1263773420", "incognito", "New Incognito tab", "-1512", "68", "0", "982"]
-                .joined(separator: field),
-        ].joined(separator: record)
+    private static let chromeProcess = BrowserTabService.BrowserProcess(
+        browser: .chrome,
+        processIdentifier: 855
+    )
 
-        let windows = BrowserTabService.parseWindows(output, browser: .chrome)
-        #expect(windows.count == 2)
+    @Test("A window listing becomes a record with its mode and rectangle")
+    func buildsWindowRecord() {
+        let normal = BrowserTabService.window(
+            from: BrowserTabService.Session.WindowListing(
+                identifier: 1_263_772_735,
+                mode: "normal",
+                title: "Inbox",
+                frame: CGRect(x: 0, y: 0, width: 1920, height: 1044),
+                activeTabURL: "https://mail.example/"
+            ),
+            of: Self.chromeProcess
+        )
+        #expect(normal.identifier == 1_263_772_735)
+        #expect(!normal.isIncognito)
+        #expect(normal.allowsFaviconRequest)
+        #expect(normal.activeTabURL == "https://mail.example/")
+        #expect(normal.title == "Inbox")
+        #expect(normal.frame == CGRect(x: 0, y: 0, width: 1920, height: 1044))
+        #expect(normal.processIdentifier == 855)
 
-        #expect(windows[0].identifier == 1_263_772_735)
-        #expect(!windows[0].isIncognito)
-        #expect(windows[0].allowsFaviconRequest)
-        #expect(windows[0].activeTabURL == "https://mail.example/")
-        #expect(windows[0].title == "Inbox")
-        #expect(windows[0].frame == CGRect(x: 0, y: 0, width: 1920, height: 1044))
-
-        #expect(windows[1].isIncognito)
-        #expect(!windows[1].allowsFaviconRequest)
-        #expect(windows[1].activeTabURL == nil)
-        // AppleScript reports edges; the rectangle is derived from them.
-        #expect(windows[1].frame == CGRect(x: -1512, y: 68, width: 1512, height: 914))
+        let private_ = BrowserTabService.window(
+            from: BrowserTabService.Session.WindowListing(
+                identifier: 1_263_773_420,
+                mode: "incognito",
+                title: "New Incognito tab",
+                frame: CGRect(x: -1512, y: 68, width: 1512, height: 914)
+            ),
+            of: Self.chromeProcess
+        )
+        #expect(private_.isIncognito)
+        #expect(!private_.allowsFaviconRequest)
+        #expect(private_.activeTabURL == nil)
+        #expect(private_.frame == CGRect(x: -1512, y: 68, width: 1512, height: 914))
     }
 
     /// An unrecognised mode stays visually unbadged, but cannot authorize a favicon request.
     @Test("An unknown mode is unbadged and network-ineligible")
     func unknownModeFailsClosed() {
-        let field = "\u{01}"
-        let output = ["9", "guest", "Window", "0", "0", "100", "100"].joined(separator: field)
-        let windows = BrowserTabService.parseWindows(output, browser: .chrome)
-
-        #expect(windows.count == 1)
-        #expect(!windows[0].isIncognito)
-        #expect(!windows[0].allowsFaviconRequest)
+        let window = BrowserTabService.window(
+            from: BrowserTabService.Session.WindowListing(
+                identifier: 9,
+                mode: "guest",
+                title: "Window",
+                frame: CGRect(x: 0, y: 0, width: 100, height: 100)
+            ),
+            of: Self.chromeProcess
+        )
+        #expect(!window.isIncognito)
+        #expect(!window.allowsFaviconRequest)
     }
 
-    @Test("Malformed records are skipped rather than crashing")
-    func malformedRecordsAreSkipped() {
-        let field = "\u{01}"
-        let record = "\u{03}"
-        let output = [
-            "not a record",
-            ["nope", "normal", "T", "0", "0", "1", "1"].joined(separator: field),
-            ["7", "normal", "T", "0", "0", "x", "1"].joined(separator: field),
-            ["8", "incognito", "Good", "0", "0", "10", "10"].joined(separator: field),
-        ].joined(separator: record)
+    /// A window whose geometry never arrived is still usable for mode and title; only the frame
+    /// pass of the matcher loses its evidence.
+    @Test("A listing with no rectangle still becomes a record")
+    func missingGeometryStillBuilds() {
+        let window = BrowserTabService.window(
+            from: BrowserTabService.Session.WindowListing(
+                identifier: 8,
+                mode: "incognito",
+                title: "Good"
+            ),
+            of: Self.chromeProcess
+        )
+        #expect(window.identifier == 8)
+        #expect(window.isIncognito)
+        #expect(window.frame == .zero)
+    }
 
-        let windows = BrowserTabService.parseWindows(output, browser: .chrome)
-        #expect(windows.count == 1)
-        #expect(windows[0].identifier == 8)
+    /// An empty active-tab address is dropped rather than carried as a URL, because the favicon
+    /// loader treats "present" as "worth requesting".
+    @Test("An empty active address is not carried")
+    func emptyActiveAddressIsDropped() {
+        let window = BrowserTabService.window(
+            from: BrowserTabService.Session.WindowListing(
+                identifier: 3,
+                mode: "normal",
+                activeTabURL: ""
+            ),
+            of: Self.chromeProcess
+        )
+        #expect(window.activeTabURL == nil)
+    }
+
+    /// Two instances of one browser each have their own windows, and their window ids come from
+    /// separate counters. Pairing has to stay inside the process, or a card can be told it is
+    /// private because the *other* Chrome has an incognito window.
+    @Test("A window is never paired across processes")
+    func pairingStaysWithinTheProcess() {
+        let shared = CGRect(x: 0, y: 0, width: 1440, height: 900)
+        let mine = entry(id: 4242, title: "Mahesh Auti", frame: shared, pid: 855)
+
+        let otherInstance = ScriptedBrowserWindow(
+            browser: .chrome,
+            processIdentifier: 37_835,
+            identifier: 943_944_415,
+            isIncognito: true,
+            title: "Mahesh Auti",
+            frame: shared
+        )
+
+        #expect(
+            IncognitoMatcher.incognitoWindowIDs(entries: [mine], scripted: [otherInstance]).isEmpty,
+            "another instance's incognito window must not badge this one"
+        )
+
+        let sameInstance = ScriptedBrowserWindow(
+            browser: .chrome,
+            processIdentifier: 855,
+            identifier: 1_263_791_277,
+            isIncognito: true,
+            title: "Mahesh Auti",
+            frame: shared
+        )
+        #expect(
+            IncognitoMatcher.incognitoWindowIDs(entries: [mine], scripted: [sameInstance]) == [4242]
+        )
     }
 
     /// Safari has no `mode`, so it is never asked and never badged. Terminal has no browsing
