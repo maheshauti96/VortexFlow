@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Read the code: auditing a menu bar app in an afternoon. · VortexFlow</title>
-  <meta name="description" content="VortexFlow asks for Accessibility, Input Monitoring and Screen Recording. "Trust us" is not an answer. Here is where to look, file by file, and how to watch it run.">
+  <meta name="description" content="VortexFlow asks for Accessibility, Input Monitoring and Screen Recording. &quot;Trust us&quot; is not an answer. Here is where to look, file by file, and how to watch it run.">
   <link rel="canonical" href="https://vortexflow.io/blog/read-the-code/">
   <link rel="icon" href="/img/favicon.svg?v=3" type="image/svg+xml">
   <link rel="icon" href="/img/favicon-32.png?v=3" type="image/png" sizes="32x32">
@@ -12,13 +12,13 @@
   <meta name="theme-color" content="#f6f4f1">
   <meta property="og:site_name" content="VortexFlow">
   <meta property="og:title" content="Read the code: auditing a menu bar app in an afternoon. · VortexFlow">
-  <meta property="og:description" content="VortexFlow asks for Accessibility, Input Monitoring and Screen Recording. "Trust us" is not an answer. Here is where to look, file by file, and how to watch it run.">
+  <meta property="og:description" content="VortexFlow asks for Accessibility, Input Monitoring and Screen Recording. &quot;Trust us&quot; is not an answer. Here is where to look, file by file, and how to watch it run.">
   <meta property="og:url" content="https://vortexflow.io/blog/read-the-code/">
   <meta property="og:type" content="article">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:title" content="Read the code: auditing a menu bar app in an afternoon. · VortexFlow">
-  <meta name="twitter:description" content="VortexFlow asks for Accessibility, Input Monitoring and Screen Recording. "Trust us" is not an answer. Here is where to look, file by file, and how to watch it run.">
+  <meta name="twitter:description" content="VortexFlow asks for Accessibility, Input Monitoring and Screen Recording. &quot;Trust us&quot; is not an answer. Here is where to look, file by file, and how to watch it run.">
   <meta property="og:image" content="https://vortexflow.io/img/og-image.png?v=4">
   <meta property="og:image:alt" content="Find the right window. Don't leave the pointer.">
   <meta name="twitter:card" content="summary_large_image">
@@ -31,10 +31,10 @@
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     "headline": "Read the code: auditing a menu bar app in an afternoon.",
-    "description": "VortexFlow asks for Accessibility, Input Monitoring and Screen Recording. "Trust us" is not an answer. Here is where to look, file by file, and how to watch it run.",
+    "description": "VortexFlow asks for Accessibility, Input Monitoring and Screen Recording. \"Trust us\" is not an answer. Here is where to look, file by file, and how to watch it run.",
     "url": "https://vortexflow.io/blog/read-the-code/",
     "datePublished": "2026-09-11",
-    "dateModified": "2026-09-11",
+    "dateModified": "2026-10-05",
     "image": "https://vortexflow.io/img/og-image.png?v=4",
     "mainEntityOfPage": "https://vortexflow.io/blog/read-the-code/",
     "author": {
@@ -68,7 +68,7 @@
     <h1>Read the code: auditing a menu bar app in an afternoon.</h1>
     <p class="byline">11 September 2026</p>
 
-    <p>A window switcher needs to see your windows, hear your mouse, and, if you want previews, look at your screen. Those are exactly the permissions a bad program would need. Asking you to trust us is not a serious answer to that. Asking you to read is. Here is the route.</p>
+    <p><a href="/">VortexFlow</a> needs to see your windows, hear your mouse, and, if you want previews, look at your screen. Those are exactly the permissions a bad program would need. Asking you to trust us is not a serious answer to that. Asking you to read is. Here is the route.</p>
     <h2>1. Nothing to trust transitively</h2>
     <p>Open <code>Package.swift</code>. Sparkle is the one third-party dependency, pinned there, and imported only by the <code>Vortexflow</code> executable. Core and its tests stay on Apple frameworks. The Sparkle pin is in the lockfile in the same repository, so you can see which release it is.</p>
     <h2>2. Network</h2>
