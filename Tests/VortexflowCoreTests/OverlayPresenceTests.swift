@@ -7,12 +7,46 @@ struct OverlayPresenceTests {
 
     private static let visibleFrame = CGRect(x: 100, y: 100, width: 800, height: 400)
 
+    @Test("an ordered panel on another Space makes the next trigger open")
+    func anotherSpaceDoesNotSwallowTheTrigger() {
+        let visible = OverlayPresence.isOnScreen(
+            stateVisible: true,
+            panelVisible: true,
+            panelOnActiveSpace: false,
+            panelOnScreen: true,
+            frame: Self.visibleFrame,
+            isRevealed: true
+        )
+        #expect(!visible)
+        for source in [TriggerSource.keyboardShortcut, .button] {
+            #expect(TriggerResponse.forPress(from: source, overlayVisible: visible, mode: .toggle) == .open)
+        }
+    }
+
+    @Test("a panel absent from WindowServer's on-screen set makes the next trigger open")
+    func windowServerDisagreementDoesNotSwallowTheTrigger() {
+        let visible = OverlayPresence.isOnScreen(
+            stateVisible: true,
+            panelVisible: true,
+            panelOnActiveSpace: true,
+            panelOnScreen: false,
+            frame: Self.visibleFrame,
+            isRevealed: true
+        )
+        #expect(!visible)
+        for source in [TriggerSource.keyboardShortcut, .button] {
+            #expect(TriggerResponse.forPress(from: source, overlayVisible: visible, mode: .toggle) == .open)
+        }
+    }
+
     @Test("a revealed panel with a real frame is on screen")
     func revealedPanelIsOnScreen() {
         #expect(
             OverlayPresence.isOnScreen(
                 stateVisible: true,
                 panelVisible: true,
+                panelOnActiveSpace: true,
+                panelOnScreen: true,
                 frame: Self.visibleFrame,
                 isRevealed: true
             )
@@ -25,6 +59,8 @@ struct OverlayPresenceTests {
             !OverlayPresence.isOnScreen(
                 stateVisible: true,
                 panelVisible: false,
+                panelOnActiveSpace: true,
+                panelOnScreen: true,
                 frame: Self.visibleFrame,
                 isRevealed: true
             )
@@ -37,6 +73,8 @@ struct OverlayPresenceTests {
             !OverlayPresence.isOnScreen(
                 stateVisible: true,
                 panelVisible: true,
+                panelOnActiveSpace: true,
+                panelOnScreen: true,
                 frame: Self.visibleFrame,
                 isRevealed: false
             )
@@ -49,6 +87,8 @@ struct OverlayPresenceTests {
             !OverlayPresence.isOnScreen(
                 stateVisible: true,
                 panelVisible: true,
+                panelOnActiveSpace: true,
+                panelOnScreen: true,
                 frame: CGRect(x: 0, y: 0, width: 1, height: 1),
                 isRevealed: true
             )
@@ -61,6 +101,8 @@ struct OverlayPresenceTests {
             !OverlayPresence.isOnScreen(
                 stateVisible: false,
                 panelVisible: true,
+                panelOnActiveSpace: true,
+                panelOnScreen: true,
                 frame: Self.visibleFrame,
                 isRevealed: true
             )

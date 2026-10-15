@@ -6,19 +6,24 @@ import Foundation
 /// `OverlayState.isVisible` is the flag `TriggerResponse` used to trust. A Space
 /// change, a display reconfiguration, or a panel that never composited can leave
 /// that flag true while nothing is on screen — and the next shortcut then closes
-/// an overlay the user cannot see. The panel's own visibility, frame, and whether
-/// the cards were revealed are the check that cannot lie.
+/// an overlay the user cannot see. AppKit's `isVisible` stays true for an ordered
+/// window on another Space, so also check Space membership and WindowServer's
+/// on-screen flag before interpreting the next trigger as a dismissal or selection.
 enum OverlayPresence: Equatable, Sendable {
 
     /// The switcher is on screen and large enough to be the thing the user is looking at.
     static func isOnScreen(
         stateVisible: Bool,
         panelVisible: Bool,
+        panelOnActiveSpace: Bool,
+        panelOnScreen: Bool,
         frame: CGRect,
         isRevealed: Bool
     ) -> Bool {
         stateVisible
             && panelVisible
+            && panelOnActiveSpace
+            && panelOnScreen
             && isRevealed
             && frame.width > 1
             && frame.height > 1

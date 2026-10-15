@@ -20,8 +20,8 @@ private final class OverlayHostingView<Content: View>: NSHostingView<Content> {
 ///   appeared.
 /// - `level = .popUpMenu`: above ordinary windows (Requirement 13.5) without sitting
 ///   above system alerts.
-/// - `.canJoinAllSpaces` + `.fullScreenAuxiliary`: appears inside a full-screen space
-///   rather than kicking the user out of it (Requirement 13.6).
+/// - `.canJoinAllSpaces` + `.fullScreenAuxiliary` + `.canJoinAllApplications`: joins
+///   other applications' full-screen Spaces and Stage Manager sets (Requirement 13.6).
 /// - `hidesOnDeactivate = false`: VortexFlow is never the active app, so a panel that
 ///   hid on deactivation would never be visible at all.
 ///
@@ -40,7 +40,10 @@ final class OverlayPanel: NSPanel {
 
         isFloatingPanel = true
         level = .popUpMenu
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle, .stationary]
+        collectionBehavior = [
+            .canJoinAllSpaces, .fullScreenAuxiliary, .canJoinAllApplications,
+            .ignoresCycle, .stationary,
+        ]
         isOpaque = false
         backgroundColor = .clear
         hasShadow = true
@@ -86,6 +89,18 @@ final class OverlayPanel: NSPanel {
     /// events reach the overlay through the event tap instead.
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
+
+    /// AppKit can report a nonactivating panel as visible on an active Space while
+    /// WindowServer excludes it. Occlusion state also lags for these panels, including
+    /// ones the user can see, so use the server's own record for trigger decisions.
+    var isOnScreenByWindowServer: Bool {
+        guard windowNumber > 0,
+              let windows = CGWindowListCopyWindowInfo(
+                .optionIncludingWindow, CGWindowID(windowNumber)
+              ) as? [[String: Any]],
+              let window = windows.first else { return false }
+        return window[kCGWindowIsOnscreen as String] as? Bool ?? false
+    }
 
     /// Resize to `size`, place at `origin`, and show without activating.
     ///

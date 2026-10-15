@@ -610,6 +610,7 @@ public final class SwitcherController {
             return
         }
         guard let panel else { return }
+        let enumerationMilliseconds = stopwatch.elapsedMilliseconds
 
         mruTracker.prune(livingWindowIDs: Set(enumerated.map(\.windowID)))
         let ordered = mruTracker.ordered(
@@ -664,7 +665,9 @@ public final class SwitcherController {
         // cards to arrive into.
         state.beginPresentation()
         let revealToken = state.presentationID
+        let preparedMilliseconds = stopwatch.elapsedMilliseconds
         panel.present(at: origin, size: size, afterLayout: true, castsShadow: hasPlate)
+        let orderedMilliseconds = stopwatch.elapsedMilliseconds
         state.isVisible = true
         // Kept in step with `state.isVisible`, because that flag is what decides whether the next
         // trigger press opens, commits or is ignored — so a panel that is not actually on screen
@@ -681,6 +684,12 @@ public final class SwitcherController {
             pointer \(Int(cursor.x), privacy: .public),\(Int(cursor.y), privacy: .public)
             """)
         stopwatch.log()
+        Log.overlay.debug("""
+            presentation stages: enumeration/queue \
+            \(enumerationMilliseconds, format: .fixed(precision: 1)) ms, \
+            prepare \(preparedMilliseconds - enumerationMilliseconds, format: .fixed(precision: 1)) ms, \
+            layout/show \(orderedMilliseconds - preparedMilliseconds, format: .fixed(precision: 1)) ms
+            """)
 
         // Requirement 5.6: scroll, keys, and reliable primary-card clicks become
         // interesting only now. Passing the panel frame lets the HID-level tap consume
@@ -701,6 +710,21 @@ public final class SwitcherController {
         // whether a card has finished fading in — so the entrance costs no responsiveness.
         DispatchQueue.main.async { [weak self] in
             self?.state.reveal(token: revealToken)
+        }
+
+        // Ordering a window does not prove that WindowServer put it on the active Space.
+        // Sample after the reveal has had time to composite, while this presentation is current.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+            guard let self, self.state.isVisible, self.state.presentationID == revealToken,
+                  let panel = self.panel else { return }
+            Log.overlay.info("""
+                panel visibility after reveal: window=\(panel.windowNumber, privacy: .public) \
+                ordered=\(panel.isVisible, privacy: .public) \
+                activeSpace=\(panel.isOnActiveSpace, privacy: .public) \
+                windowServerOnScreen=\(panel.isOnScreenByWindowServer, privacy: .public) \
+                unoccluded=\(panel.occlusionState.contains(.visible), privacy: .public) \
+                revealed=\(self.state.isRevealed, privacy: .public)
+                """)
         }
 
         // Everything found, not only what is drawn. These decorate a window's identity — private
@@ -2563,9 +2587,13 @@ public final class SwitcherController {
             hotKeyMonitor.noteArrival()
         }
 
+        let panelOnActiveSpace = panel?.isOnActiveSpace ?? false
+        let panelOnScreen = panel?.isOnScreenByWindowServer ?? false
         let onScreen = OverlayPresence.isOnScreen(
             stateVisible: state.isVisible,
             panelVisible: panel?.isVisible ?? false,
+            panelOnActiveSpace: panelOnActiveSpace,
+            panelOnScreen: panelOnScreen,
             frame: panel?.frame ?? .zero,
             isRevealed: state.isRevealed
         )
@@ -2573,8 +2601,18 @@ public final class SwitcherController {
         // A leftover `isVisible` with nothing on screen used to make the shortcut
         // *close* an overlay the user could not see. Repair, then open.
         if state.isVisible && !onScreen {
-            Log.overlay.info("overlay flag was leftover; repairing and opening")
+            Log.overlay.info("""
+                overlay is not on screen; reopening: \
+                activeSpace=\(panelOnActiveSpace, privacy: .public) \
+                windowServerOnScreen=\(panelOnScreen, privacy: .public)
+                """)
             dismiss(activating: nil)
+            // A reused panel can retain stale Space membership. A fresh window joins
+            // the current application set instead of reordering the same hidden window.
+            if !panelOnActiveSpace || !panelOnScreen {
+                panel?.close()
+                buildPanel()
+            }
             suppressTriggerUntil = nil
             beginPresentation(mode: .hold)
             return

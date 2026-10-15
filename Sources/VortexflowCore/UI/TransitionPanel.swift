@@ -30,7 +30,10 @@ final class TransitionPanel: NSPanel {
         // Above the switcher overlay, so the ghost is not clipped by a panel that is still
         // fading out.
         level = .popUpMenu
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle, .stationary]
+        collectionBehavior = [
+            .canJoinAllSpaces, .fullScreenAuxiliary, .canJoinAllApplications,
+            .ignoresCycle, .stationary,
+        ]
         isOpaque = false
         backgroundColor = .clear
         hasShadow = true

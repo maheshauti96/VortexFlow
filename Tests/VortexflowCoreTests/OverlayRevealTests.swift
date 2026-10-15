@@ -26,9 +26,7 @@ struct OverlayRevealTests {
         }
     }
 
-    /// The whole point of the cap. A fixed 28ms step is pleasant at four windows and a card
-    /// still arriving 700ms later at twenty-five, which would make the switcher feel slower
-    /// the more it has to show.
+    /// The cap keeps the entrance from becoming slower as the window count grows.
     @Test("The last card arrives within the budget however many there are", arguments: [2, 5, 9, 16, 25, 60])
     func lastCardStaysWithinBudget(count: Int) {
         let last = OverlayReveal.delay(forOffset: count - 1, count: count, reduceMotion: false)
@@ -42,7 +40,7 @@ struct OverlayRevealTests {
     /// Short lists get the full per-card step; only long ones are compressed.
     @Test("Small counts keep the preferred step")
     func smallCountsUseThePreferredStep() {
-        // Eight cards at 28ms is 196ms, just inside the 200ms budget.
+        // Eight cards at 5ms is 35ms, just inside the 40ms stagger budget.
         #expect(isCloseDouble(OverlayReveal.delay(forOffset: 1, count: 8, reduceMotion: false), OverlayReveal.step))
 
         // Twenty-five cannot be, so the step shrinks.
@@ -110,6 +108,15 @@ struct OverlayRevealTests {
     func initialScaleIsSubtle() {
         #expect(OverlayReveal.initialScale > 0.5)
         #expect(OverlayReveal.initialScale < 1)
+    }
+
+    @Test("The entire entrance finishes within 150ms", arguments: [1, 8, 25, 60])
+    func entireEntranceIsQuick(count: Int) {
+        let last = OverlayReveal.delay(forOffset: count - 1, count: count, reduceMotion: false)
+        #expect(last + OverlayReveal.duration <= 0.15)
+        #expect(OverlayReveal.hubDelay + OverlayReveal.duration <= 0.15)
+        #expect(OverlayReveal.ringDuration <= 0.15)
+        #expect(OverlayReveal.couplingDelay + OverlayReveal.couplingDuration <= 0.15)
     }
 
     /// The caption's cross-fade has to keep up with the pointer.

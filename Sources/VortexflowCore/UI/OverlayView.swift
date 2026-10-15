@@ -372,7 +372,10 @@ struct OverlayView: View {
                 )
                 .opacity(state.isRevealed ? 1 : 0)
                 .scaleEffect(state.isRevealed ? 1 : OverlayReveal.initialScale, anchor: revealAnchor)
-                .animation(hubRevealAnimation?.delay(0.03 * Double(slot)), value: state.isRevealed)
+                .animation(
+                    revealAnimation(forVisibleOffset: slot, count: layout.shortcutSlotCount),
+                    value: state.isRevealed
+                )
             }
             .zIndex(1.5)
 
@@ -728,13 +731,13 @@ struct OverlayView: View {
         revealAnimation(forVisibleOffset: max(0, index - layout.visibleRange.lowerBound))
     }
 
-    private func revealAnimation(forVisibleOffset offset: Int) -> Animation? {
+    private func revealAnimation(forVisibleOffset offset: Int, count: Int? = nil) -> Animation? {
         // Requirement 15.1: no entrance under Reduce Motion. The cards are simply there.
         guard !state.reduceMotion else { return nil }
         return .easeOut(duration: OverlayReveal.duration).delay(
             OverlayReveal.delay(
                 forOffset: offset,
-                count: max(1, cards.count),
+                count: max(1, count ?? cards.count),
                 reduceMotion: false
             )
         )

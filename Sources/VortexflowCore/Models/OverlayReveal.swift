@@ -18,19 +18,19 @@ import Foundation
 enum OverlayReveal {
 
     /// Preferred delay between one card and the next.
-    static let step: Double = 0.028
+    static let step: Double = 0.005
 
     /// Every card must have started arriving within this, however long the list is.
-    static let totalWindow: Double = 0.20
+    static let totalWindow: Double = 0.04
 
     /// How long one card takes to arrive.
-    static let duration: Double = 0.22
+    static let duration: Double = 0.10
 
     /// Cards start slightly small, so they read as arriving rather than merely fading.
-    static let initialScale: CGFloat = 0.86
+    static let initialScale: CGFloat = 0.97
 
     /// The caption follows the well rather than competing with the ring ignition.
-    static let hubDelay: Double = 0.08
+    static let hubDelay: Double = 0.01
 
     /// The well is up from the first revealed frame, so caption contrast never waits on a fade.
     static let wellDelay: Double = 0
@@ -38,13 +38,13 @@ enum OverlayReveal {
     /// How long the hub ring takes to ignite. Kept inside the same budget as the wedges:
     /// a beauty-reel ignition that ran for seconds would make the switcher feel slower
     /// the one moment it has to be fast.
-    static let ringDuration: Double = 0.18
+    static let ringDuration: Double = 0.10
 
     /// Coupling trails the ring so the well is readable before the spark appears.
-    static let couplingDelay: Double = 0.08
+    static let couplingDelay: Double = 0.02
 
     /// How long the coupling tongue takes to appear.
-    static let couplingDuration: Double = 0.18
+    static let couplingDuration: Double = 0.10
 
     /// How long the hub takes to cross-fade from one window's title to the next.
     ///
@@ -53,7 +53,7 @@ enum OverlayReveal {
     /// around it fires one of these per wedge. At the length of a normal transition they would queue
     /// up and the title would smear into an unreadable blur, which is worse than the hard cut it
     /// replaces. Short enough to soften the swap, short enough to keep up.
-    static let captionChange: Double = 0.12
+    static let captionChange: Double = 0.07
 
     /// When the card at `offset` in the visible run should start.
     ///
