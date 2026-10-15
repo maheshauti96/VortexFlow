@@ -22,6 +22,17 @@ repeat {
     }.map(\.processIdentifier))
     let windows = CGWindowListCopyWindowInfo([.optionAll, .excludeDesktopElements], kCGNullWindowID)
         as? [[String: Any]] ?? []
+    let frontmost = NSWorkspace.shared.frontmostApplication
+    let frontmostWindows: [[String: Any]] = windows.compactMap { window in
+        guard let pid = window[kCGWindowOwnerPID as String] as? Int32,
+              pid == frontmost?.processIdentifier,
+              window[kCGWindowIsOnscreen as String] as? Bool == true else { return nil }
+        return [
+            "window": window[kCGWindowNumber as String] ?? 0,
+            "layer": window[kCGWindowLayer as String] ?? 0,
+            "bounds": window[kCGWindowBounds as String] ?? [:],
+        ]
+    }
     let overlays: [[String: Any]] = windows.compactMap { window in
         guard let pid = window[kCGWindowOwnerPID as String] as? Int32,
               switcherPIDs.contains(pid),
@@ -30,13 +41,15 @@ repeat {
         return [
             "pid": pid,
             "window": window[kCGWindowNumber as String] ?? 0,
+            "layer": window[kCGWindowLayer as String] ?? 0,
             "onScreen": window[kCGWindowIsOnscreen as String] as? Bool ?? false,
             "alpha": window[kCGWindowAlpha as String] ?? 0,
             "bounds": window[kCGWindowBounds as String] ?? [:],
         ]
     }
     var snapshot: [String: Any] = [
-        "frontmost": NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "none",
+        "frontmost": frontmost?.bundleIdentifier ?? "none",
+        "frontmostWindows": frontmostWindows,
         "screens": NSScreen.screens.map {
             ["name": $0.localizedName, "frame": NSStringFromRect($0.frame)]
         },

@@ -375,9 +375,14 @@ public final class SwitcherController {
             queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated {
-                guard let self, self.state.isVisible else { return }
-                Log.overlay.debug("display configuration changed; dismissing")
+                guard let self else { return }
+                // A hidden panel can retain membership in a disconnected display's
+                // Space too. Invalidate pending geometry and replace it even when idle.
+                self.presentationAttempt &+= 1
+                self.isPresenting = false
                 self.dismiss(activating: nil)
+                self.buildPanel()
+                Log.overlay.info("display configuration changed; rebuilt overlay for the current arrangement")
             }
         }
     }
@@ -466,6 +471,7 @@ public final class SwitcherController {
     // MARK: - Panel construction
 
     private func buildPanel() {
+        panel?.close()
         // `hoveredIndexProvider` lets the SwiftUI tree read hover state without the
         // controller having to publish it through the observable object (hover
         // changes at 60 Hz; selection is what actually needs to be published).
@@ -609,6 +615,13 @@ public final class SwitcherController {
             Log.overlay.debug("stale presentation discarded")
             return
         }
+        // Joining all Spaces does not guarantee that a long-lived native window
+        // joins a newly active full-screen Space. Repair before the first order-in,
+        // rather than waiting for another trigger to notice the invisible panel.
+        if let panel, !panel.isOnActiveSpace {
+            Log.overlay.info("replacing detached panel before presentation: window=\(panel.windowNumber, privacy: .public)")
+            buildPanel()
+        }
         guard let panel else { return }
         let enumerationMilliseconds = stopwatch.elapsedMilliseconds
 
@@ -694,10 +707,7 @@ public final class SwitcherController {
         // Requirement 5.6: scroll, keys, and reliable primary-card clicks become
         // interesting only now. Passing the panel frame lets the HID-level tap consume
         // clicks on the overlay while preserving normal click-through outside it.
-        triggerMonitor.isSearchActive = state.isSearching
-        triggerMonitor.setOverlayTapEnabled(true, clickRegion: panel.frame)
-        startHoverTracking()
-        installClickMonitors()
+        enableOverlayInteractionIfOnScreen(panel)
 
         // Let the cards in, on the next run loop pass so the hidden frame the layout above drew
         // has been composited before they start arriving.
@@ -706,25 +716,17 @@ public final class SwitcherController {
         // meant the first presentation's pending reveal fired during the second — which had just
         // set itself hidden — and the second got no entrance at all.
         //
-        // Input is already live at this point — hit-testing is arithmetic and does not care
-        // whether a card has finished fading in — so the entrance costs no responsiveness.
+        // Input is armed only after the native panel is verified on screen. Card hit-testing
+        // does not depend on completing the entrance animation.
         DispatchQueue.main.async { [weak self] in
-            self?.state.reveal(token: revealToken)
+            guard let self, self.state.reveal(token: revealToken), let panel = self.panel else { return }
+            self.enableOverlayInteractionIfOnScreen(panel)
         }
 
         // Ordering a window does not prove that WindowServer put it on the active Space.
         // Sample after the reveal has had time to composite, while this presentation is current.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
-            guard let self, self.state.isVisible, self.state.presentationID == revealToken,
-                  let panel = self.panel else { return }
-            Log.overlay.info("""
-                panel visibility after reveal: window=\(panel.windowNumber, privacy: .public) \
-                ordered=\(panel.isVisible, privacy: .public) \
-                activeSpace=\(panel.isOnActiveSpace, privacy: .public) \
-                windowServerOnScreen=\(panel.isOnScreenByWindowServer, privacy: .public) \
-                unoccluded=\(panel.occlusionState.contains(.visible), privacy: .public) \
-                revealed=\(self.state.isRevealed, privacy: .public)
-                """)
+            self?.verifyPanelPresentation(token: revealToken, canRebuild: true)
         }
 
         // Everything found, not only what is drawn. These decorate a window's identity — private
@@ -752,6 +754,56 @@ public final class SwitcherController {
         if activateAsSoonAsReady {
             activateAsSoonAsReady = false
             commitSelection()
+        }
+    }
+
+    private func enableOverlayInteractionIfOnScreen(_ panel: OverlayPanel) {
+        guard state.isVisible, panel.isVisible, panel.isOnActiveSpace,
+              panel.isOnScreenByWindowServer else { return }
+        triggerMonitor.isSearchActive = state.isSearching
+        triggerMonitor.setOverlayTapEnabled(true, clickRegion: panel.frame)
+        if hoverTimer == nil { startHoverTracking() }
+        if localClickMonitor == nil || globalClickMonitor == nil { installClickMonitors() }
+    }
+
+    /// Space membership can change between the preflight check and native ordering.
+    /// Replace the native window once without re-enumerating or replaying the entrance.
+    private func verifyPanelPresentation(token: Int, canRebuild: Bool) {
+        guard state.isVisible, state.presentationID == token, let panel else { return }
+        let onActiveSpace = panel.isOnActiveSpace
+        let onScreen = panel.isOnScreenByWindowServer
+        Log.overlay.info("""
+            panel visibility after reveal: window=\(panel.windowNumber, privacy: .public) \
+            ordered=\(panel.isVisible, privacy: .public) \
+            activeSpace=\(onActiveSpace, privacy: .public) \
+            windowServerOnScreen=\(onScreen, privacy: .public) \
+            revealed=\(self.state.isRevealed, privacy: .public)
+            """)
+        if onActiveSpace && onScreen {
+            enableOverlayInteractionIfOnScreen(panel)
+            return
+        }
+
+        // Never let an invisible overlay swallow a click or choose an unseen card.
+        triggerMonitor.setOverlayTapEnabled(false)
+        stopHoverTracking()
+        removeClickMonitors()
+        guard canRebuild else {
+            Log.overlay.error("panel still absent after replacement; dismissing without switching")
+            dismiss(activating: nil)
+            return
+        }
+
+        let frame = panel.frame
+        let castsShadow = panel.hasShadow
+        Log.overlay.info("replacing detached panel during the same presentation")
+        buildPanel()
+        guard let replacement = self.panel else { return }
+        replacement.setIncludedInScreenshots(settings.includeOverlayInScreenshots)
+        replacement.present(at: frame.origin, size: frame.size, afterLayout: true, castsShadow: castsShadow)
+        enableOverlayInteractionIfOnScreen(replacement)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+            self?.verifyPanelPresentation(token: token, canRebuild: false)
         }
     }
 
@@ -2610,7 +2662,6 @@ public final class SwitcherController {
             // A reused panel can retain stale Space membership. A fresh window joins
             // the current application set instead of reordering the same hidden window.
             if !panelOnActiveSpace || !panelOnScreen {
-                panel?.close()
                 buildPanel()
             }
             suppressTriggerUntil = nil

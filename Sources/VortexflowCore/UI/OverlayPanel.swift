@@ -25,9 +25,9 @@ private final class OverlayHostingView<Content: View>: NSHostingView<Content> {
 /// - `hidesOnDeactivate = false`: VortexFlow is never the active app, so a panel that
 ///   hid on deactivation would never be visible at all.
 ///
-/// The panel is created once at launch and reused. Constructing an `NSPanel` and
-/// hosting view costs tens of milliseconds — affordable at launch, not affordable
-/// inside the 150 ms presentation budget (Requirement 14.1).
+/// The panel is pre-built and reused while it belongs to the active Space. A display
+/// reconfiguration or detached Space membership requires a new native window; ordering
+/// the old one forward cannot repair its membership.
 final class OverlayPanel: NSPanel {
 
     init<Content: View>(content: Content) {
